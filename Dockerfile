@@ -29,7 +29,7 @@ COPY serve ./serve
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-ENV GIT_SHA=main BUILT_AT=unknown SOURCE_REF=main+pr132+pr131
+ENV GIT_SHA=22dbd89805278ab927a12dea4560931dcd7142de BUILT_AT=2026-10-30T09:10:31Z SOURCE_REF=main
 
 # 8080 is the only port Coolify's healthcheck targets. The other services stay
 # on loopback: nothing inside is reachable from outside except through /api,
