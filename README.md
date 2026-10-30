@@ -6,8 +6,9 @@ Live at **https://floodsense-eu.zaindroid.me**. Open, no sign-in.
 
 The agents, API and data views come from
 [FloodSenseEU-Hackathon-Monorepo](https://github.com/GenAI-Open-Agent-Hackathon/FloodSenseEU-Hackathon-Monorepo)
-`main`. This repository adds a new interface in `serve/web`: plain HTML, CSS and JavaScript modules,
-no build step.
+`main`. So does the interface in `serve/web`: main's `ui-merged/web`, plain HTML, CSS and
+JavaScript modules with no build step, and the team's 3D map (MapLibre, prebuilt in `vendor/`,
+with a Leaflet fallback).
 
 ## Pages
 

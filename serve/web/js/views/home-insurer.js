@@ -2,6 +2,7 @@
 // exposures, and the actions waiting for sign-off.
 import { get } from "../api.js";
 import { makeMap, tone } from "../map.js";
+import { make3d } from "../map3d.js";
 import { titled } from "../places.js";
 import { ago, dial, fill, h, loading, num } from "../ui.js";
 
@@ -19,7 +20,7 @@ export function homeInsurer(root) {
         h("a", { class: "btn primary", href: `#/ask/${encodeURIComponent("Why are our Valencia sites at risk?")}` }, "Ask why they are at risk"))),
     body);
 
-  let map = null;
+  let map = null, m3 = null, gone = false;
   Promise.all([get("/views/exposure_join"), get("/watch/status").catch(() => null)]).then(async ([sites, w]) => {
     const hit = sites.filter((s) => s.in_footprint);
     const segments = [...new Set(sites.map((s) => s.segment))].sort();
@@ -58,6 +59,13 @@ export function homeInsurer(root) {
         }))),
       h("p", { class: "muted small", text: `Synthetic demo sites. River data last checked ${ago(w?.last_cycle?.finished_at) || "recently"}.` }));
 
+    // 3D first; the pin colour is the footprint (observed, Copernicus EMS), amber and never red, grey outside.
+    m3 = await make3d(mapEl, (pin) => sites.map((s) => pin(
+      { id: s.policy_id, lat: s.lat, lon: s.lon, label: `${s.policy_id}, ${titled(s.segment)}, ${euros(s.sum_insured_eur)}${s.in_footprint ? ", inside the footprint" : ", outside the footprint"}` },
+      { band: s.in_footprint ? "peak" : null })), { ariaLabel: `Map of ${sites.length} insured sites around Valencia`, columnDeg: 0.004, attribution: "Copernicus EMS" });
+    if (gone) return m3?.map.destroy();
+    if (m3) return mapEl.parentElement.querySelector(".map-key").replaceChildren(h("span", { class: "muted", text: "Amber pin: inside the observed flood footprint (Copernicus EMS). Grey: outside. Colour only, not a risk score." }));
+
     const lats = sites.map((s) => s.lat), lons = sites.map((s) => s.lon);
     const m = await makeMap(mapEl, [[Math.min(...lats), Math.min(...lons)], [Math.max(...lats), Math.max(...lons)]]).catch(() => null);
     if (!m) return mapEl.replaceChildren(h("p", { class: "muted", style: "padding:1rem", text: "The map could not load." }));
@@ -72,7 +80,7 @@ export function homeInsurer(root) {
     }
   }).catch(() => fill(body, h("p", { class: "err", text: "The insured sites are unavailable right now." })));
 
-  return () => map?.remove();
+  return () => { gone = true; map?.remove(); m3?.map.destroy(); };
 }
 
 function tile(value, label, href) {

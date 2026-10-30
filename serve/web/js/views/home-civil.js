@@ -2,6 +2,7 @@
 // the places to act on first, and what the watch noticed, refreshed every minute.
 import { get } from "../api.js";
 import { makeMap, tone } from "../map.js";
+import { make3d } from "../map3d.js";
 import { STATE, bySeverity, loadPlaces } from "../places.js";
 import { ago, clock, dial, fill, h, loading, num, status } from "../ui.js";
 
@@ -24,13 +25,20 @@ export function homeCivil(root) {
     h("div", { class: "ops-grid" },
       h("section", { class: "card flush" }, mapEl,
         h("div", { class: "map-key" }, ["high", "watch", "normal"].map((k) =>
-          h("span", {}, h("i", { class: `k-${k}` }), STATE[k].word)))),
+          h("span", {}, h("i", { class: `k-${k}` }), STATE[k].word + ({ high: " (measured gauge)", watch: " (or high, river model)" }[k] || ""))))),
       h("div", { class: "ops-side" },
         h("section", { class: "card widget-pair" }, highest, countdown),
         h("section", { class: "card" }, h("div", { class: "section-head" }, h("h2", { text: "Act first" }), h("a", { href: "#/watch", text: "Every place" })), queue),
         h("section", { class: "card" }, h("h2", { text: "What the watch noticed" }), feed))));
 
-  let map = null, L = null, layer = null, stopped = false;
+  let map = null, L = null, layer = null, stopped = false, m3 = null, tried = false;
+  const BAND = { normal: "low", watch: "elevated", high: "peak" };
+  // Red only for a live measured gauge above its high water (group "germany"); model places stay amber.
+  const pins = (all) => (pin) => all.filter((p) => p.lat != null).map((p) => {
+    const base = { id: `${p.group}:${p.place}:${p.where}`, lat: p.lat, lon: p.lon, label: `${p.place}, ${p.where}: ${STATE[p.state].word}, ${p.value}` };
+    if (p.group === "germany") return pin(base, { status: { normal: "ok", watch: "near", high: "over" }[p.state] || "unknown", measured: true });
+    return pin(base, { band: BAND[p.state] || null });
+  });
   let next = null, cycle = 900; // the watch loop's next check, and its interval in seconds
   const tick = () => { root.querySelector(".ops-clock").textContent = `${new Date().toISOString().slice(11, 16)} UTC`; };
   // The countdown to the watch loop's next check, every second.
@@ -62,6 +70,14 @@ export function homeCivil(root) {
       : h("p", { class: "muted", text: "Nothing is above its usual level." }));
     fill(feed, (events?.events || []).map((e) => h("li", { class: e.tone || "" }, h("time", { text: clock(e.ts) }), h("span", { text: e.text }))));
 
+    if (!tried) {
+      tried = true;
+      m3 = await make3d(mapEl, pins(all), { ariaLabel: "Map of every watched place, coloured by state", columnDeg: 0.08, attribution: "Gauges and river models" });
+      if (stopped) return m3?.map.destroy();
+      // The 3D pins are not the legend's dots: amber and green by band, red only for a live gauge above its usual high water.
+      if (m3) mapEl.parentElement.querySelector(".map-key").replaceChildren(h("span", { class: "muted", text: "Pin colour: green normal, amber watch or high from a river model. Red: a live gauge measured above its usual high water." }));
+    }
+    if (m3) return m3.map.update({ points: pins(all)(m3.api.pin) });
     if (!map) {
       const m = await makeMap(mapEl, [[36, -9], [55, 24]]).catch(() => null);
       if (!m || stopped) return;
@@ -70,14 +86,15 @@ export function homeCivil(root) {
     }
     layer.clearLayers();
     for (const p of [...all].filter((p) => p.lat != null).sort((a, b) => STATE[a.state].rank - STATE[b.state].rank)) {
-      const c = tone(COLOUR[p.state]);
+      // Red only for a measured gauge; a model place at "high" stays amber.
+      const c = tone(p.group !== "germany" && p.state === "high" ? "watch" : COLOUR[p.state]);
       L.circleMarker([p.lat, p.lon], { radius: RADIUS[p.state], weight: 1.5, color: c, fillColor: c, fillOpacity: p.state === "normal" ? 0.35 : 0.7 })
         .bindTooltip(`${p.place}, ${p.where}: ${STATE[p.state].word}, ${p.value}`).addTo(layer);
     }
   }
   draw().catch(() => fill(strip, h("p", { class: "err", text: "The situation is unavailable right now." })));
   const timer = setInterval(() => { tick(); draw().catch(() => {}); }, 60000);
-  return () => { stopped = true; clearInterval(timer); clearInterval(seconds); map?.remove(); };
+  return () => { stopped = true; clearInterval(timer); clearInterval(seconds); map?.remove(); m3?.map.destroy(); };
 }
 
 function cell(value, label, toneName = "", href) {
