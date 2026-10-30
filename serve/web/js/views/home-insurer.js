@@ -3,7 +3,7 @@
 import { get } from "../api.js";
 import { makeMap, tone } from "../map.js";
 import { titled } from "../places.js";
-import { ago, fill, h, loading, num } from "../ui.js";
+import { ago, dial, fill, h, loading, num } from "../ui.js";
 
 const euros = (v) => `€${num(v / 1e6, v < 1e7 ? 1 : 0)}M`;
 const sum = (list) => list.reduce((n, s) => n + (s.sum_insured_eur || 0), 0);
@@ -27,10 +27,13 @@ export function homeInsurer(root) {
     const mapEl = h("div", { class: "map", role: "img", "aria-label": `Map of ${sites.length} insured sites around Valencia, ${hit.length} inside the flood footprint` });
 
     fill(body,
-      h("div", { class: "tiles" },
-        tile(num(hit.length), `of ${num(sites.length)} sites inside the footprint`),
-        tile(euros(sum(hit)), `insured inside, of ${euros(sum(sites))}`),
-        tile(`${Math.round((sum(hit) / sum(sites)) * 100)}%`, "of the insured value is exposed"),
+      h("div", { class: "widgets" },
+        h("div", { class: "widget" }, dial({ value: hit.length, max: sites.length, tone: "high", text: `${num(hit.length)} / ${num(sites.length)}`, label: "sites inside the footprint" })),
+        h("div", { class: "widget" }, dial({ value: sum(hit), max: sum(sites), tone: "watch", text: `${Math.round((sum(hit) / sum(sites)) * 100)}%`, label: `of insured value exposed, ${euros(sum(hit))}` })),
+        h("div", { class: "widget" }, (() => {
+          const ind = sites.filter((s) => s.segment === "industrial"), indHit = ind.filter((s) => s.in_footprint);
+          return dial({ value: indHit.length, max: ind.length, tone: "high", text: `${num(indHit.length)} / ${num(ind.length)}`, label: "industrial sites hit" });
+        })()),
         tile(num(w?.counts?.awaiting_approval ?? 0), "actions waiting for sign-off", "#/decide")),
       h("div", { class: "desk-grid" },
         h("section", { class: "card flush" }, mapEl,

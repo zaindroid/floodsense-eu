@@ -158,6 +158,29 @@ h2 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.01em; margin: 0 0 1
 .bar-key .high::before { background: var(--high); }
 .bar-key b { font-family: var(--display); color: var(--ink); font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 
+/* ---------- dials and widgets ---------- */
+.dial { margin: 0; display: grid; justify-items: center; text-align: center; width: 100%; }
+.dial svg { width: 100%; max-width: 11.5rem; overflow: visible; }
+.dial .track, .dial .value { fill: none; stroke-width: 9; stroke-linecap: round; }
+.dial .track { stroke: var(--line); }
+.dial .value { stroke: var(--water); transition: d .9s cubic-bezier(.3, 1, .4, 1); }
+.dial.ok .value { stroke: var(--ok); }
+.dial.watch .value { stroke: var(--watch); }
+.dial.high .value { stroke: var(--high); }
+.dial .usual { stroke: var(--ink); stroke-width: 2; opacity: .6; }
+.dial .needle { transform-origin: 60px 60px; transition: transform .9s cubic-bezier(.3, 1.35, .5, 1); }
+.dial .needle line { stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; }
+.dial .hub { fill: var(--ink); }
+.dial b { font-family: var(--display); font-size: 1.45rem; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.02em; margin-top: -.35rem; }
+.dial figcaption { color: var(--soft); font-size: .84rem; line-height: 1.35; max-width: 14rem; }
+.widgets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.widget, .widgets .tile { display: grid; place-items: center; padding: 1.1rem 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+.widgets .tile { align-content: center; justify-items: start; }
+@media (max-width: 52rem) { .widgets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.widget-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.c-dial { max-width: 16rem; margin: .4rem auto .2rem; }
+@media (prefers-reduced-motion: reduce) { .dial .value, .dial .needle { transition: none; } }
+
 /* ---------- citizen home: one place, plain words ---------- */
 .c-hero { position: relative; display: grid; place-items: center; text-align: center; margin: -2.5rem -1.25rem 0; padding: 4.5rem 1.25rem 3.5rem; overflow: hidden; min-height: min(30rem, 64vh); }
 .c-hero-in { position: relative; width: min(40rem, 100%); }

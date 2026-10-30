@@ -85,3 +85,30 @@ export function meter(ratio, tone, title) {
   return h("span", { class: `meter ${tone}`, title, role: "img", "aria-label": title },
     h("span", { class: "fill", style: `width:${(k * 100).toFixed(1)}%` }), h("span", { class: "usual" }));
 }
+
+// A half-circle dial with a needle. `usual` marks a reference value on the scale.
+// The element gets set(value, text) so a live widget can move its needle.
+export function dial({ value = 0, max = 1, text, label, tone = "water", usual = null }) {
+  const R = 48, CX = 60, CY = 60;
+  const at = (t) => [CX - R * Math.cos(Math.PI * t), CY - R * Math.sin(Math.PI * t)];
+  const arc = (t) => { const [x0, y0] = at(0), [x1, y1] = at(t); return `M${x0},${y0} A${R},${R} 0 0 1 ${x1.toFixed(2)},${y1.toFixed(2)}`; };
+  const share = (v) => (typeof v === "number" && max > 0 ? Math.max(0, Math.min(1, v / max)) : 0);
+  const fillArc = s("path", { class: "value", d: arc(0.001) });
+  const needle = s("g", { class: "needle" }, s("line", { x1: CX, y1: CY, x2: CX - R + 14, y2: CY }), s("circle", { class: "hub", cx: CX, cy: CY, r: 4 }));
+  const tick = usual == null ? null : (() => {
+    const t = share(usual), [x0, y0] = at(t), c = Math.cos(Math.PI * t), sn = Math.sin(Math.PI * t);
+    return s("line", { class: "usual", x1: x0 + 7 * c, y1: y0 + 7 * sn, x2: x0 - 7 * c, y2: y0 - 7 * sn });
+  })();
+  const readout = h("b", { text: text ?? "" });
+  const el = h("figure", { class: `dial ${tone}` },
+    s("svg", { viewBox: "0 0 120 68", "aria-hidden": "true" }, s("path", { class: "track", d: arc(1) }), fillArc, tick, needle),
+    readout, h("figcaption", { text: label }));
+  el.set = (v, t) => {
+    const k = share(v);
+    fillArc.setAttribute("d", arc(Math.max(0.001, k)));
+    needle.style.transform = `rotate(${180 * k}deg)`;
+    if (t != null) readout.textContent = t;
+  };
+  requestAnimationFrame(() => requestAnimationFrame(() => el.set(value)));
+  return el;
+}

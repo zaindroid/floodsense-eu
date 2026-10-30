@@ -2,7 +2,7 @@
 // in plain words, with what to do. No dashboards.
 import { hydrograph } from "../hydro.js";
 import { STATE, bySeverity, loadPlaces } from "../places.js";
-import { ago, fill, h, meter, num, status } from "../ui.js";
+import { ago, dial, fill, h, num, status } from "../ui.js";
 
 const TODO = {
   normal: ["Nothing to do right now.", "Check again if heavy rain is forecast."],
@@ -78,9 +78,8 @@ function placeCard(p) {
       h("div", {}, h("h2", { text: p.place }), h("span", { class: "muted", text: p.where })),
       status(st.word, st.tone)),
     h("p", { class: "c-say", text: st.plain }),
-    p.ratio == null ? null : h("div", { class: "c-meter" },
-      meter(p.ratio, st.tone, `${num(p.ratio, 1)}× ${p.usual}`),
-      h("div", { class: "c-meter-key" }, h("span", { text: "Low" }), h("span", { text: "Usual" }), h("span", { text: "Twice usual" }))),
+    p.ratio == null ? null : h("div", { class: "c-dial" },
+      dial({ value: p.ratio, max: 3, usual: 1, tone: st.tone, text: `${num(p.ratio, 1)}×`, label: `compared with ${p.usual} (the mark)` })),
     h("h3", { text: "What to do" }),
     h("ul", { class: "todo" }, TODO[p.state].map((t) => h("li", { text: t }))),
     h("p", { class: "c-source" }, `${p.value} from ${p.source.toLowerCase()}, ${ago(p.at)}. `,
