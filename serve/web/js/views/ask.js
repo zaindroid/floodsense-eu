@@ -32,6 +32,9 @@ const KIND = { a: "Live data", b: "Record", c: "Document" };
 // A Zetaris query is titled by its view ("floodsense.hazard_timeline"); say it in words.
 const label = (c) => c.layer === "a" ? `Zetaris query: ${c.title.split(".").pop().replace(/_/g, " ")}` : c.title;
 const EVENTS = { EMSR773: "Valencia, Oct 2024", EMSR517: "Ahr valley, Jul 2021" };
+// The model writes its own refs ("[C1, C2]") into the summary; the claims already carry them.
+const plainText = (t) => String(t || "").replace(/\s*\[C\d+(?:,\s*C\d+)*\]/g, "");
+const WEB_NOTE = /^Web context, not an official warning\.\s*/;
 
 export function ask(root) {
   const r = ROLES[role()];
@@ -171,7 +174,7 @@ export function answer(run, withNext = true) {
   };
   const flagged = new Set(run.judge_summary?.flagged_claim_ids || []);
   const claims = (run.claims || []).map((cl) =>
-    h("li", {}, cl.text, [...new Set((cl.citations || []).map(cite))].map((n) =>
+    h("li", {}, WEB_NOTE.test(cl.text) ? [pill("Web, not official", "plain"), " ", cl.text.replace(WEB_NOTE, "")] : cl.text, [...new Set((cl.citations || []).map(cite))].map((n) =>
       h("span", { class: "ref", title: label(sources[n - 1].c), text: String(n) })),
       flagged.has(cl.claim_id) ? h("span", { style: "margin-left:.5rem" }, pill("Judge flagged", "watch")) : null));
   const score = run.judge_summary?.overall;
@@ -183,7 +186,7 @@ export function answer(run, withNext = true) {
       pill(run.served_from === "live" ? "Live answer" : run.served_from === "cache" ? "Recent answer" : "Recorded answer", "info"),
       run.event_id && EVENTS[run.event_id] ? pill(EVENTS[run.event_id], "plain") : null),
     h("h2", { text: run.plain?.headline || "Answer" }),
-    h("p", { class: "summary", text: run.plain?.one_line || run.summary }),
+    h("p", { class: "summary", text: plainText(run.plain?.one_line || run.summary) }),
     claims.length ? h("ol", { class: "claims" }, claims) : null,
     typeof score === "number" ? h("div", { class: `verdict${passes === false ? " flag" : ""}`, style: "margin-top:1.2rem" },
       h("b", { text: `${Math.round(score * 100)}%` }),
