@@ -1,6 +1,6 @@
 import { get } from "../api.js";
 import { role } from "../roles.js";
-import { ago, clock, failure, fill, h, loading, meter, num, pill } from "../ui.js";
+import { ago, clock, failure, fill, h, loading, meter, num, status } from "../ui.js";
 
 // The eight Valencia points (ui/src/fixtures/valencia_points.json on main).
 const VALENCIA = {
@@ -113,7 +113,7 @@ function row(p) {
     h("div", { class: "val" }, p.value, " ", h("small", { text: [p.detail, trend].filter(Boolean).join(", ") }),
       p.ratio == null ? null : meter(p.ratio, st.tone, `${num(p.ratio, 1)}× ${p.usual}; the middle line is usual`)),
     h("div", { class: "src", text: p.source }),
-    pill(st.word, st.tone));
+    status(st.word, st.tone));
 }
 
 // How the places split across Normal, Watch and High, as one bar.

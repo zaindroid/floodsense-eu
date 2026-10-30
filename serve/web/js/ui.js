@@ -51,6 +51,15 @@ export function num(v, digits = 0) {
   return typeof v === "number" && Number.isFinite(v) ? v.toLocaleString(undefined, { maximumFractionDigits: digits }) : "–";
 }
 
+// A place's state: a three-step level and the word. Normal one step, Watch two, High three.
+const LEVEL = { ok: 1, watch: 2, high: 3 };
+export function status(word, tone) {
+  const n = LEVEL[tone] || 0;
+  return h("span", { class: `status ${tone}`.trim() },
+    h("span", { class: "lv", "aria-hidden": "true" }, [1, 2, 3].map((i) => h("i", { class: i <= n ? "on" : null }))),
+    word);
+}
+
 export function pill(text, tone = "") {
   return h("span", { class: `pill ${tone}`.trim(), text });
 }
