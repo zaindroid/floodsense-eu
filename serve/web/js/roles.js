@@ -3,10 +3,6 @@
 export const ROLES = {
   citizen: {
     label: "Citizen",
-    asks: "Is my area at risk?",
-    blurb: "Plain answers about the river near you, with the source behind every number.",
-    start: "#/watch",
-    startText: "See your area",
     questions: [
       { q: "Is the Rhine at Köln rising right now?", when: "now", place: "Köln" },
       { q: "Is Paiporta at risk of flooding right now?", when: "now", place: "Paiporta" },
@@ -15,10 +11,6 @@ export const ROLES = {
   },
   insurer: {
     label: "Insurer",
-    asks: "Which of our sites are exposed?",
-    blurb: "Cited exposure of insured sites, checked by a Skeptic and a Judge, approved by your analyst.",
-    start: "#/ask",
-    startText: "Ask about exposure",
     questions: [
       { q: "Why are our Valencia sites at risk?", when: "valencia", place: "Paiporta" },
       { q: "Which insured sites sat inside the flood footprint?", when: "valencia", place: "Valencia" },
@@ -27,10 +19,6 @@ export const ROLES = {
   },
   civil: {
     label: "Civil protection",
-    asks: "Where should we act first?",
-    blurb: "Where rivers are rising across Europe, and which actions to take, held for your decision.",
-    start: "#/watch",
-    startText: "See where rivers rise",
     questions: [
       { q: "Where in Europe are rivers above their usual level today?", when: "now", place: null },
       { q: "When did the river peak at Paiporta, and what warned of it first?", when: "valencia", place: "Paiporta" },

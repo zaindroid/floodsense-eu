@@ -13,11 +13,11 @@ no build step.
 
 | Page | What it shows |
 |---|---|
-| Overview | What FloodSense does, live numbers, how the agents work, who it is for |
+| Overview | What FloodSense does, live gauges, and the flow of the latest question |
 | Watch | Every place read live, its state, its source and how fresh it is |
 | Ask | A question in plain words, each agent working step by step, then a cited answer |
 | Decide | The actions the agents propose, held until a person approves or rejects them |
-| For the jury | Each requirement with live proof, a one-minute walkthrough, the architecture |
+| Live | The whole system as it runs: sources, Zetaris, each agent, every Nebius model call, the person who decides |
 
 The role switch (citizen, insurer, civil protection) changes the suggested questions and where each
 journey starts, never what is true.

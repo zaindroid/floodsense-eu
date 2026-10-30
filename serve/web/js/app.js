@@ -2,12 +2,13 @@ import { ROLES, role, setRole } from "./roles.js";
 import { h, WAVE } from "./ui.js";
 import { ask } from "./views/ask.js";
 import { decide } from "./views/decide.js";
-import { jury } from "./views/jury.js";
+import { live } from "./views/live.js";
 import { overview } from "./views/overview.js";
 import { watch } from "./views/watch.js";
 
-const VIEWS = { "": overview, watch, ask, decide, jury };
+const VIEWS = { "": overview, watch, ask, decide, live };
 const main = document.getElementById("view");
+let leave = null; // a view may return a cleanup for its timers and streams
 
 document.getElementById("brand").insertAdjacentHTML("afterbegin", WAVE);
 
@@ -29,8 +30,9 @@ function render() {
     if (own === (VIEWS[name] ? name : "")) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   }
+  leave?.();
   main.replaceChildren();
-  view(main, go, arg ? decodeURIComponent(arg) : undefined);
+  leave = view(main, go, arg ? decodeURIComponent(arg) : undefined) || null;
   window.scrollTo(0, 0);
 }
 

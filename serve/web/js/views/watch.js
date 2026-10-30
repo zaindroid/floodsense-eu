@@ -1,6 +1,6 @@
 import { get } from "../api.js";
 import { role } from "../roles.js";
-import { ago, clock, failure, fill, h, loading, num, pill } from "../ui.js";
+import { ago, clock, failure, fill, h, loading, meter, num, pill } from "../ui.js";
 
 // The eight Valencia points (ui/src/fixtures/valencia_points.json on main).
 const VALENCIA = {
@@ -46,6 +46,7 @@ function places(gauges, eu, hazard) {
       group: "germany", place: titled(g.station), where: `${titled(g.water)}, Germany`,
       value: `${num(g.level_cm)} cm`, detail: g.mhw_cm ? `usual high ${num(g.mhw_cm)} cm` : "",
       trend, state: BAND[g.band] || "unknown", source: "Gauge, measured", at: g.ts_utc,
+      ratio: g.mhw_cm ? g.level_cm / g.mhw_cm : null, usual: "its usual high water",
     });
   }
   for (const e of eu || []) {
@@ -53,6 +54,7 @@ function places(gauges, eu, hazard) {
       group: "europe", place: e.name, where: `${e.river}, ${country(e.country)}`,
       value: `${num(e.forecast_max_m3s)} m³/s`, detail: e.past30_median_m3s ? `${num(e.forecast_max_m3s / e.past30_median_m3s, 1)}× its usual flow` : "",
       trend: null, state: BAND[e.band] || "unknown", source: "River model, 7-day forecast", at: e.as_of_date,
+      ratio: e.past30_median_m3s ? e.forecast_max_m3s / e.past30_median_m3s : null, usual: "its usual flow",
     });
   }
   const byPoint = {};
@@ -65,6 +67,7 @@ function places(gauges, eu, hazard) {
       group: "valencia", place: VALENCIA[id] || id, where: "Valencia, Spain",
       value: `${num(now?.discharge_m3s, 1)} m³/s`, detail: `next 48 h up to ${num(peak, 1)} m³/s`,
       trend: null, state: peak > VALENCIA_LINE ? "watch" : "normal", source: "River model, 48-hour forecast", at: now?.ts_utc,
+      ratio: peak / VALENCIA_LINE, usual: `the ${VALENCIA_LINE} m³/s line`,
     });
   }
   return out;
@@ -74,7 +77,6 @@ const GROUPS = { all: "All places", germany: "Germany", europe: "Rest of Europe"
 
 function render(body, all, status, events) {
   let group = "all";
-  const counts = (k) => all.filter((p) => p.state === k).length;
   const list = h("div", { class: "rows" });
   const chips = h("div", { class: "chips", role: "group", "aria-label": "Filter places" });
 
@@ -90,8 +92,7 @@ function render(body, all, status, events) {
 
   const freshest = all.map((p) => p.at).filter(Boolean).sort().pop();
   fill(body,
-    h("div", { class: "grid three card" },
-      stat(counts("normal"), "Normal", "ok"), stat(counts("watch"), "Watch", "watch"), stat(counts("high"), "High", "high")),
+    spread(all),
     h("p", { class: "note", style: "margin-top:1rem" },
       `Latest reading ${ago(freshest)}. "Watch" and "High" compare each place with its own usual level; they are not official warnings.`),
     h("div", { class: "section" }, chips, h("div", { style: "height:1rem" }), list),
@@ -109,11 +110,18 @@ function row(p) {
   const trend = p.trend === null ? null : p.trend > 0 ? `rising ${num(p.trend)} cm/h` : p.trend < 0 ? `falling ${num(-p.trend)} cm/h` : "steady";
   return h("div", { class: "row" },
     h("div", { class: "place" }, h("b", { text: p.place }), h("span", { text: p.where })),
-    h("div", { class: "val" }, p.value, " ", h("small", { text: [p.detail, trend].filter(Boolean).join(", ") })),
+    h("div", { class: "val" }, p.value, " ", h("small", { text: [p.detail, trend].filter(Boolean).join(", ") }),
+      p.ratio == null ? null : meter(p.ratio, st.tone, `${num(p.ratio, 1)}× ${p.usual}; the middle line is usual`)),
     h("div", { class: "src", text: p.source }),
     pill(st.word, st.tone));
 }
 
-function stat(value, label, tone) {
-  return h("div", { class: "stat" }, h("b", { text: String(value), style: `color:var(--${tone})` }), h("span", { text: label }));
+// How the places split across Normal, Watch and High, as one bar.
+function spread(all) {
+  const parts = ["normal", "watch", "high"].map((k) => [k, all.filter((p) => p.state === k).length]);
+  return h("div", { class: "card spread" },
+    h("div", { class: "bar", role: "img", "aria-label": parts.map(([k, n]) => `${n} ${STATE[k].word}`).join(", ") },
+      parts.filter(([, n]) => n).map(([k, n]) => h("span", { class: STATE[k].tone, style: `flex:${n}` }))),
+    h("div", { class: "bar-key" }, parts.map(([k, n]) =>
+      h("span", { class: STATE[k].tone }, h("b", { text: String(n) }), STATE[k].word))));
 }

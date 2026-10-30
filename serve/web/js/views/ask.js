@@ -27,7 +27,7 @@ const STEPS = {
 };
 // Bookkeeping steps, not agents: left out of the pipeline.
 const QUIET = new Set(["router", "world_model"]);
-const step = (node) => STEPS[node] || [node.replace(/_/g, " "), ""];
+export const step = (node) => STEPS[node] || [node.replace(/_/g, " "), ""];
 const KIND = { a: "Live data", b: "Record", c: "Document" };
 // A Zetaris query is titled by its view ("floodsense.hazard_timeline"); say it in words.
 const label = (c) => c.layer === "a" ? `Zetaris query: ${c.title.split(".").pop().replace(/_/g, " ")}` : c.title;

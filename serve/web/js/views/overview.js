@@ -1,19 +1,13 @@
 import { get } from "../api.js";
+import { createFlow } from "../flow.js";
 import { hydrograph } from "../hydro.js";
-import { ROLES, setRole } from "../roles.js";
-import { ago, h } from "../ui.js";
+import { ago, h, ring } from "../ui.js";
 
-const STEPS = [
-  ["Watch", "Reads 45 live river and rain sources across Europe, around the clock."],
-  ["Investigate", "Builds a cause-and-effect answer, citing the data behind each claim."],
-  ["Challenge", "A second agent tries to disprove it and drops what doesn't hold."],
-  ["Judge", "A third checks every claim against its evidence and scores it."],
-  ["Decide", "Nothing is sent until a person approves the proposed actions."],
-];
+const REPO = "https://github.com/zaindroid/floodsense-eu";
 
-export function overview(root, go) {
-  const live = h("div", { class: "grid three", "aria-live": "polite" },
-    stat("…", "sources watched live"), stat("…", "places above normal"), stat("…", "last checked"));
+export function overview(root) {
+  const gauges = h("div", { class: "gauges three", "aria-live": "polite" });
+  const flow = createFlow();
 
   root.append(
     h("section", { class: "hero" },
@@ -25,35 +19,29 @@ export function overview(root, go) {
           h("a", { class: "btn primary", href: "#/ask" }, "Ask the agents"),
           h("a", { class: "btn ghost", href: "#/watch" }, "See what's being watched")))),
 
-    h("section", { class: "section card" }, live),
+    h("section", { class: "section" }, h("h2", { text: "Right now" }), gauges),
 
     h("section", { class: "section" },
-      h("h2", { text: "How it works" }),
-      h("ol", { class: "grid five", style: "list-style:none;padding:0;margin:0" },
-        STEPS.map(([title, text], i) =>
-          h("li", { class: "step card" }, h("span", { class: "n", text: String(i + 1) }), h("h3", { text: title }), h("p", { text }))))),
+      h("div", { class: "section-head" },
+        h("h2", { text: "Watch it work" }),
+        h("a", { href: "#/live", text: "Open the live view" })),
+      flow.el),
 
-    h("section", { class: "section" },
-      h("h2", { text: "Who it's for" }),
-      h("div", { class: "grid three" },
-        Object.entries(ROLES).map(([id, r]) =>
-          h("button", { class: "card role-card", type: "button", onclick: () => { setRole(id); go(r.start); } },
-            h("span", { class: "muted small", text: r.label }),
-            h("h3", { text: r.asks }),
-            h("p", { text: r.blurb }),
-            h("div", { class: "go", text: r.startText }))))),
+    h("p", { class: "built" },
+      "Agents on NVIDIA Nemotron through Nebius Token Factory, data through Zetaris, web context from Tavily. ",
+      h("a", { href: REPO, target: "_blank", rel: "noopener noreferrer", text: "Open source, Apache-2.0" })),
   );
 
   Promise.all([get("/watch/status"), get("/platform/status")])
     .then(([w, p]) => {
-      live.replaceChildren(
-        stat(String(p.live_sources ?? w.counts?.sources ?? "–"), "sources watched live"),
-        stat(String(w.counts?.elevated ?? "–"), "places above normal"),
-        stat(ago(w.last_cycle?.finished_at) || "–", "last checked"));
+      const total = w.counts?.sources ?? p.live_sources ?? 0;
+      const since = (Date.now() - Date.parse(w.last_cycle?.finished_at || "")) / 60000;
+      gauges.replaceChildren(
+        ring({ value: p.live_sources ?? total, max: total || 1, label: "sources read live", tone: "water" }),
+        ring({ value: w.counts?.elevated ?? 0, max: total || 1, label: "places above their usual level", tone: "watch" }),
+        ring({ value: Number.isFinite(since) ? Math.min(15, since) : 0, max: 15, text: ago(w.last_cycle?.finished_at).replace(" ago", "") || "–", label: "since the last check, every 15 min", tone: "water" }));
     })
-    .catch(() => live.replaceChildren(h("p", { class: "muted", text: "Live numbers are unavailable right now." })));
-}
+    .catch(() => gauges.replaceChildren(h("p", { class: "muted", text: "Live numbers are unavailable right now." })));
 
-function stat(value, label) {
-  return h("div", { class: "stat" }, h("b", { text: value }), h("span", { text: label }));
+  return () => flow.stop();
 }
