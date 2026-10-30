@@ -1,0 +1,19 @@
+# zorc app contract for FloodSense EU with its own UI. Everything but serve/ is
+# mirrored from the FloodSenseEU-Hackathon-Monorepo main. The UI is serve/web:
+# plain HTML, CSS and JS modules, no build step.
+name: floodsense-eu
+port: 8080
+memory_mb: 512
+
+domains:
+  - floodsense-eu.zaindroid.me
+
+# Model calls go to Nebius Token Factory and data to the shared Zetaris
+# gateway; neither needs a platform database, cache or AI gateway.
+database: false
+redis: false
+ai: false
+
+# Set after the first start with set_app_env_vars (deploy() drops undeclared
+# overrides): LLM_BACKEND, NEBIUS_*, ZETARIS_*, FF_LIVE_DATA, FF_TAVILY and
+# TAVILY_API_KEY, plus the run caps.
