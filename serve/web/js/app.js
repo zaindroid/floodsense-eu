@@ -2,11 +2,10 @@ import { ROLES, role, setRole } from "./roles.js";
 import { h, WAVE } from "./ui.js";
 import { ask } from "./views/ask.js";
 import { decide } from "./views/decide.js";
-import { live } from "./views/live.js";
 import { overview } from "./views/overview.js";
 import { watch } from "./views/watch.js";
 
-const VIEWS = { "": overview, watch, ask, decide, live };
+const VIEWS = { "": overview, watch, ask, decide, live: ask, jury: ask };
 const main = document.getElementById("view");
 let leave = null; // a view may return a cleanup for its timers and streams
 

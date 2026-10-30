@@ -1,5 +1,6 @@
 import { get, post, rememberRun, streamRun } from "../api.js";
 import { ROLES, WHEN, role } from "../roles.js";
+import { createFlow } from "../flow.js";
 import { fill, h, loading, num, pill } from "../ui.js";
 
 // Each step of the agent graph, in plain words.
@@ -33,7 +34,8 @@ const KIND = { a: "Live data", b: "Record", c: "Document" };
 const label = (c) => c.layer === "a" ? `Zetaris query: ${c.title.split(".").pop().replace(/_/g, " ")}` : c.title;
 const EVENTS = { EMSR773: "Valencia, Oct 2024", EMSR517: "Ahr valley, Jul 2021" };
 // The model writes its own refs ("[C1, C2]") into the summary; the claims already carry them.
-export const plainText = (t) => String(t || "").replace(/\s*\[C\d+(?:,\s*C\d+)*\]/g, "").replace(/([.!?])\./g, "$1");
+export const plainText = (t) => String(t || "").replace(/\s*\[C\d+(?:,\s*C\d+)*\]/g, "").replace(/([.!?])\./g, "$1")
+  .replace(/(\d+\.\d)\d{5,}/g, "$1"); // float noise such as 88.2000000000001
 const WEB_NOTE = /^Web context, not an official warning\.\s*/;
 
 export function ask(root) {
@@ -56,11 +58,25 @@ export function ask(root) {
       h("div", { style: "display:flex;gap:.6rem;align-items:center;flex-wrap:wrap" }, h("span", { class: "label", text: "Data from" }), whenChips),
       send));
 
+  // The live flow, docked at the bottom: the latest question until you ask, then yours.
+  const flow = createFlow();
+  const hint = h("span", { class: "dock-hint", text: "Show" });
+  const bar = h("button", { class: "dock-bar", type: "button", "aria-expanded": "false", onclick: () => dock(bar.getAttribute("aria-expanded") !== "true") },
+    h("span", { class: "dock-title" }, h("span", { class: "dock-dot" }), "How it works, live"), hint);
+  const panel = h("aside", { class: "dock", "aria-label": "How it works, live" }, bar, h("div", { class: "dock-body" }, flow.el));
+  const dock = (open) => {
+    bar.setAttribute("aria-expanded", String(open));
+    panel.classList.toggle("open", open);
+    root.classList.toggle("docked-open", open);
+    hint.textContent = open ? "Hide" : "Show";
+  };
+
+  root.classList.add("docked");
   root.append(
     h("header", { class: "page-head" },
       h("h1", { text: "Ask the agents" }),
       h("p", { text: "Ask in plain words. Watch each agent work, then read an answer where every claim shows its source." })),
-    form, out);
+    form, out, panel);
 
   let stop = null;
   async function start() {
@@ -83,6 +99,8 @@ export function ask(root) {
         return;
       }
       rememberRun({ id: res.run_id, q, at: new Date().toISOString() });
+      flow.follow({ run_id: res.run_id, question: q });
+      dock(true);
       if (res.status && res.status !== "running") return finish(res.run_id);
       follow(res.run_id);
     } catch (e) {
@@ -154,6 +172,7 @@ export function ask(root) {
       if (run && run.status !== "running" && run.summary) {
         send.disabled = false;
         fill(main, answer(run));
+        setTimeout(() => dock(false), 4000); // make room for the answer
         return;
       }
       await new Promise((ok) => setTimeout(ok, 3000));
@@ -161,6 +180,12 @@ export function ask(root) {
     send.disabled = false;
     main.replaceChildren(h("p", { class: "err", text: "This run did not finish with an answer. Try asking again." }));
   }
+
+  return () => {
+    stop?.();
+    flow.stop();
+    root.classList.remove("docked", "docked-open");
+  };
 }
 
 // The answer card: summary, numbered claims with source refs, the Judge's score, sources.
@@ -174,7 +199,7 @@ export function answer(run, withNext = true) {
   };
   const flagged = new Set(run.judge_summary?.flagged_claim_ids || []);
   const claims = (run.claims || []).map((cl) =>
-    h("li", {}, WEB_NOTE.test(cl.text) ? [pill("Web, not official", "plain"), " ", cl.text.replace(WEB_NOTE, "")] : cl.text, [...new Set((cl.citations || []).map(cite))].map((n) =>
+    h("li", {}, WEB_NOTE.test(cl.text) ? [pill("Web, not official", "plain"), " ", cl.text.replace(WEB_NOTE, "")] : plainText(cl.text), [...new Set((cl.citations || []).map(cite))].map((n) =>
       h("span", { class: "ref", title: label(sources[n - 1].c), text: String(n) })),
       flagged.has(cl.claim_id) ? h("span", { style: "margin-left:.5rem" }, pill("Judge flagged", "watch")) : null));
   const score = run.judge_summary?.overall;

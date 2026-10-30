@@ -24,7 +24,7 @@ export function overview(root) {
     h("section", { class: "section" },
       h("div", { class: "section-head" },
         h("h2", { text: "Watch it work" }),
-        h("a", { href: "#/live", text: "Open the live view" })),
+        h("a", { href: "#/ask", text: "Ask a question and follow it" })),
       flow.el),
 
     h("p", { class: "built" },

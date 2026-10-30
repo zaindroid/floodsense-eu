@@ -52,6 +52,7 @@ export function createFlow({ log = false } = {}) {
   const fx = s("g", {});
   const timers = new Set();
   let gen = 0, last = null, live = null, stopStream = null, busyTimer = null, alive = true;
+  let pinned = false; // following one chosen run: no replays, no switching to other runs
 
   const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); if (alive) fn(); }, ms); timers.add(t); };
   const clearTimers = () => { for (const t of timers) clearTimeout(t); timers.clear(); };
@@ -270,6 +271,7 @@ export function createFlow({ log = false } = {}) {
         if (my !== gen) return;
         final(run?.status);
         live = null;
+        if (pinned) return;
         await sleep(8000);
         if (my === gen) replay(++gen);
         return;
@@ -283,7 +285,7 @@ export function createFlow({ log = false } = {}) {
     travel(P.source(y), 1800, "data faint");
   }, 2400);
   const poll = setInterval(async () => {
-    if (live) return;
+    if (live || pinned) return;
     const runs = (await get("/runs/past").catch(() => null))?.runs || [];
     const running = runs.find((r) => r.status === "running");
     if (running && alive && !live) follow(running);
@@ -297,6 +299,11 @@ export function createFlow({ log = false } = {}) {
 
   return {
     el,
+    /** Follow this run only, from now on. */
+    follow(run) {
+      pinned = true;
+      follow(run);
+    },
     stop() {
       alive = false;
       gen++;

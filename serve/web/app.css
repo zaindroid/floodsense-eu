@@ -103,7 +103,7 @@ h2 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.01em; margin: 0 0 1
 
 /* ---------- gauges ---------- */
 .gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 1rem; }
-.ring, .kpi { margin: 0; position: relative; display: grid; justify-items: center; align-content: center; gap: .2rem; text-align: center;
+.ring { margin: 0; position: relative; display: grid; justify-items: center; align-content: center; gap: .2rem; text-align: center;
               background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem 1rem 1.1rem; min-height: 11.5rem;
               box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%); }
 .ring svg { width: 7.4rem; height: 7.4rem; }
@@ -114,8 +114,7 @@ h2 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.01em; margin: 0 0 1
 .ring.watch .value { stroke: var(--watch); color: var(--watch); }
 .ring-num { position: absolute; top: 3.85rem; left: 0; right: 0; font-family: var(--display); font-size: 1.55rem; font-weight: 600;
             letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1; }
-.ring figcaption, .kpi span { color: var(--soft); font-size: .86rem; line-height: 1.35; max-width: 11rem; }
-.kpi b { font-family: var(--display); font-size: 2.3rem; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ring figcaption { color: var(--soft); font-size: .86rem; line-height: 1.35; max-width: 11rem; }
 
 .meter { position: relative; display: block; height: 4px; margin-top: .45rem; max-width: 11rem; border-radius: 4px; background: rgb(140 180 225 / 13%); }
 .meter .fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--water); }
@@ -221,6 +220,24 @@ h2 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.01em; margin: 0 0 1
 .flow-log li > span:not(.meta) { color: var(--soft); }
 @keyframes slidein { from { opacity: 0; transform: translateY(-4px); } }
 @media (max-width: 44rem) { .flow-log li { grid-template-columns: 4.6rem minmax(0, 1fr); } .flow-log li > span:not(.meta) { display: none; } }
+
+/* ---------- the live flow, docked at the bottom of Ask ---------- */
+main.docked { padding-bottom: 6rem; }
+main.docked-open { padding-bottom: min(64vh, 36rem); }
+.dock { position: fixed; left: 50%; bottom: .8rem; transform: translateX(-50%); z-index: 20; width: min(72rem, calc(100% - 1.6rem));
+        border: 1px solid var(--line-2); border-radius: 16px; background: rgb(7 21 38 / 90%); backdrop-filter: blur(16px) saturate(140%);
+        box-shadow: 0 -10px 44px rgb(0 0 0 / 45%); }
+.dock-bar { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .7rem 1.1rem;
+            border: 0; background: none; cursor: pointer; color: var(--ink); font-weight: 600; font-size: .92rem; }
+.dock-bar:focus-visible { outline: 2px solid var(--ice); outline-offset: -2px; border-radius: 16px; }
+.dock-title { display: inline-flex; align-items: center; gap: .55rem; }
+.dock-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); animation: blink 1.6s ease-in-out infinite; }
+.dock-hint { color: var(--water); font-size: .85rem; font-weight: 500; }
+.dock-body { display: none; padding: 0 .9rem .8rem; }
+.dock.open .dock-body { display: block; }
+.dock .flow { background: none; border: 0; box-shadow: none; padding: 0; backdrop-filter: none; }
+.dock .flow-canvas { margin-top: .2rem; }
+.dock .flow svg { max-height: min(40vh, 22rem); min-width: 40rem; }
 
 /* ---------- watch ---------- */
 .rows { display: grid; gap: .5rem; }
@@ -339,6 +356,6 @@ details.more > summary:focus-visible { outline: 2px solid var(--ice); outline-of
 @media (prefers-reduced-motion: reduce) {
   .hydro .river { stroke-dashoffset: 0; animation: none; }
   .hydro .area { opacity: 1; animation: none; }
-  .pipeline li.now .dot, .mode.live::before, .flow .node.busy rect, .flow .node.wait rect, .flow-log li { animation: none; }
+  .pipeline li.now .dot, .mode.live::before, .dock-dot, .flow .node.busy rect, .flow .node.wait rect, .flow-log li { animation: none; }
   .ring .value { transition: none; }
 }
