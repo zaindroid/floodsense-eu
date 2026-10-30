@@ -33,7 +33,7 @@ const KIND = { a: "Live data", b: "Record", c: "Document" };
 const label = (c) => c.layer === "a" ? `Zetaris query: ${c.title.split(".").pop().replace(/_/g, " ")}` : c.title;
 const EVENTS = { EMSR773: "Valencia, Oct 2024", EMSR517: "Ahr valley, Jul 2021" };
 // The model writes its own refs ("[C1, C2]") into the summary; the claims already carry them.
-const plainText = (t) => String(t || "").replace(/\s*\[C\d+(?:,\s*C\d+)*\]/g, "");
+const plainText = (t) => String(t || "").replace(/\s*\[C\d+(?:,\s*C\d+)*\]/g, "").replace(/([.!?])\./g, "$1");
 const WEB_NOTE = /^Web context, not an official warning\.\s*/;
 
 export function ask(root) {
