@@ -75,7 +75,7 @@ export function ask(root) {
   root.append(
     h("header", { class: "page-head" },
       h("h1", { text: "Ask the agents" }),
-      h("p", { text: "Ask in plain words. Watch each agent work, then read an answer where every claim shows its source." })),
+      h("p", { text: r.askIntro })),
     form, out, panel);
 
   let stop = null;
@@ -85,7 +85,8 @@ export function ask(root) {
     const w = WHEN[when];
     const body = { question: q, doc_query: q };
     if (w.event_id) Object.assign(body, { event_id: w.event_id, replay_ts: w.replay_ts });
-    if (place) body.context = { place };
+    // The role shapes the wording: plain words and what to do, exposure first, or a briefing.
+    body.context = { role: r.api, page: "ask", ...(place ? { place } : {}) };
     stop?.();
     send.disabled = true;
     out.replaceChildren(loading("Starting the agents…"));
@@ -171,7 +172,7 @@ export function ask(root) {
       if (run?.status === "failed") break;
       if (run && run.status !== "running" && run.summary) {
         send.disabled = false;
-        fill(main, answer(run));
+        fill(main, answer(run, r.decide, !r.decide));
         setTimeout(() => dock(false), 4000); // make room for the answer
         return;
       }
@@ -189,7 +190,8 @@ export function ask(root) {
 }
 
 // The answer card: summary, numbered claims with source refs, the Judge's score, sources.
-export function answer(run, withNext = true) {
+// simple: the short answer first, the claims and sources folded away (citizens).
+export function answer(run, withNext = true, simple = false) {
   const sources = [];
   const cite = (c) => {
     const key = c.query_id || c.source_url || c.title;
@@ -206,12 +208,14 @@ export function answer(run, withNext = true) {
   const passes = run.judge_summary?.passes;
   const actions = (run.playbook || []).length;
 
-  return [
+  const head = [
     h("div", { style: "display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem" },
       pill(run.served_from === "live" ? "Live answer" : run.served_from === "cache" ? "Recent answer" : "Recorded answer", "info"),
       run.event_id && EVENTS[run.event_id] ? pill(EVENTS[run.event_id], "plain") : null),
     h("h2", { text: run.plain?.headline || "Answer" }),
     h("p", { class: "summary", text: plainText(run.plain?.one_line || run.summary) }),
+  ];
+  const evidence = [
     claims.length ? h("ol", { class: "claims" }, claims) : null,
     typeof score === "number" ? h("div", { class: `verdict${passes === false ? " flag" : ""}`, style: "margin-top:1.2rem" },
       h("b", { text: `${Math.round(score * 100)}%` }),
@@ -224,6 +228,11 @@ export function answer(run, withNext = true) {
             h("div", { class: "t" }, c.source_url ? h("a", { href: c.source_url, target: "_blank", rel: "noopener noreferrer", text: label(c) }) : label(c)),
             h("div", { class: "m", text: [web ? "Web" : KIND[c.layer] || "Source", c.publisher].filter(Boolean).join(", ") })));
       }))) : null,
+  ];
+  return [
+    ...head,
+    simple ? h("details", { class: "more" }, h("summary", {}, `Show the evidence: ${claims.length} claims, ${sources.length} sources`),
+      h("div", { class: "more-body" }, evidence)) : evidence,
     withNext && run.status === "awaiting_approval" ? h("p", { class: "note", style: "margin-top:1.4rem" },
       `${actions} proposed ${actions === 1 ? "action is" : "actions are"} waiting for a person. `,
       h("a", { href: `#/decide/${encodeURIComponent(run.run_id)}`, text: "Review and decide" })) : null,

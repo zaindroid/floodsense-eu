@@ -1,5 +1,6 @@
 import { get, myRuns, post } from "../api.js";
 import { ago, failure, fill, h, loading, num, pill } from "../ui.js";
+import { ROLES, role } from "../roles.js";
 import { answer, plainText } from "./ask.js";
 
 const DONE = { approved: ["Approved", "ok"], edited: ["Approved with edits", "ok"], auto: ["Approved", "ok"], rejected: ["Rejected", "high"] };
@@ -15,6 +16,12 @@ const ICON = {
 export function decide(root, go, runId) {
   const body = h("div", { class: "decide" }, loading("Loading decisions…"));
   root.append(body);
+  if (!ROLES[role()].decide) {
+    return fill(body,
+      h("header", { class: "page-head" }, h("h1", { text: "Decide" }),
+        h("p", { text: "Insurers and civil protection approve the actions the agents propose. Switch role in the top bar to see their queue." })),
+      h("a", { class: "btn primary", href: "#/watch" }, "Back to my area"));
+  }
   (runId ? detail(body, runId) : queue(body)).catch((e) => body.replaceChildren(failure(e)));
 }
 
@@ -22,7 +29,10 @@ export function decide(root, go, runId) {
 async function queue(body) {
   const status = await get("/watch/status").catch(() => null);
   const ids = [...new Set([...(status?.awaiting_run_ids || []), ...myRuns().map((r) => r.id)])].slice(0, 12);
-  const runs = (await Promise.all(ids.map((id) => get(`/runs/${encodeURIComponent(id)}`).catch(() => null)))).filter((r) => r?.summary);
+  // Each role sees the runs asked in its own role, plus older ones that carry no role.
+  const mine = ROLES[role()].api;
+  const runs = (await Promise.all(ids.map((id) => get(`/runs/${encodeURIComponent(id)}`).catch(() => null))))
+    .filter((r) => r?.summary && [undefined, null, mine].includes(r.request?.context?.role));
   const groups = {
     waiting: runs.filter((r) => r.status === "awaiting_approval"),
     decided: runs.filter((r) => DONE[r.approval?.status]),
@@ -46,8 +56,8 @@ async function queue(body) {
 
   fill(body,
     h("header", { class: "page-head" },
-      h("h1", { text: "Decide" }),
-      h("p", { text: "The agents propose actions. Nothing is sent until a person approves it." })),
+      h("h1", { text: ROLES[role()].decideTitle }),
+      h("p", { text: `${ROLES[role()].decideIntro} Nothing is sent until a person approves it.` })),
     seg, list);
 }
 
@@ -150,7 +160,7 @@ function decisionBar(body, runId, outbound) {
     msg.className = "bar-msg";
     msg.textContent = action === "approve" ? "Approving…" : "Rejecting…";
     try {
-      await post(`/runs/${encodeURIComponent(runId)}/approval`, { action, reviewer: "jury", reviewer_note: note.value.trim() || null });
+      await post(`/runs/${encodeURIComponent(runId)}/approval`, { action, reviewer: ROLES[role()].reviewer, reviewer_note: note.value.trim() || null });
       body.replaceChildren(loading("Saved."));
       await detail(body, runId);
     } catch (e) {

@@ -1,11 +1,15 @@
 import { get } from "../api.js";
 import { createFlow } from "../flow.js";
 import { hydrograph } from "../hydro.js";
+import { ROLES, role } from "../roles.js";
 import { ago, h, ring } from "../ui.js";
 
 const REPO = "https://github.com/zaindroid/floodsense-eu";
+const euros = (v) => `€${Math.round(v / 1e6)}M`;
 
 export function overview(root) {
+  const who = role();
+  const r = ROLES[who];
   const gauges = h("div", { class: "gauges three", "aria-live": "polite" });
   const flow = createFlow();
 
@@ -14,10 +18,9 @@ export function overview(root) {
       hydrograph(),
       h("div", { class: "hero-in" },
         h("h1", {}, "Flood alerts.", h("br"), "Know before the water does."),
-        h("p", { text: "AI agents read live river data, challenge their own answers and cite every number. A person makes the call." }),
+        h("p", { text: r.sub }),
         h("div", { class: "actions" },
-          h("a", { class: "btn primary", href: "#/ask" }, "Ask the agents"),
-          h("a", { class: "btn ghost", href: "#/watch" }, "See what's being watched")))),
+          r.cta.map(([text, href], i) => h("a", { class: `btn ${i ? "ghost" : "primary"}`, href }, text))))),
 
     h("section", { class: "section" }, h("h2", { text: "Right now" }), gauges),
 
@@ -32,14 +35,32 @@ export function overview(root) {
       h("a", { href: REPO, target: "_blank", rel: "noopener noreferrer", text: "Open source, Apache-2.0" })),
   );
 
-  Promise.all([get("/watch/status"), get("/platform/status")])
-    .then(([w, p]) => {
+  const views = who === "insurer" ? get("/views/exposure_join") : Promise.resolve(null);
+  Promise.all([get("/watch/status"), get("/platform/status"), views.catch(() => null)])
+    .then(([w, p, sites]) => {
       const total = w.counts?.sources ?? p.live_sources ?? 0;
+      const elevated = w.counts?.elevated ?? 0;
       const since = (Date.now() - Date.parse(w.last_cycle?.finished_at || "")) / 60000;
+      const checked = ring({ value: Number.isFinite(since) ? Math.min(15, since) : 0, max: 15,
+        text: (ago(w.last_cycle?.finished_at) || "–").replace(" ago", ""), label: "since the last check, every 15 min" });
+      if (who === "insurer" && sites?.length) {
+        const hit = sites.filter((s) => s.in_footprint);
+        const sum = (list) => list.reduce((n, s) => n + (s.sum_insured_eur || 0), 0);
+        return gauges.replaceChildren(
+          ring({ value: hit.length, max: sites.length, text: `${hit.length}`, label: `of ${sites.length} insured sites inside the Valencia 2024 footprint`, tone: "high" }),
+          ring({ value: sum(hit), max: sum(sites), text: euros(sum(hit)), label: `insured there, of ${euros(sum(sites))} across all sites`, tone: "watch" }),
+          checked);
+      }
+      if (who === "citizen") {
+        return gauges.replaceChildren(
+          ring({ value: total - elevated, max: total || 1, label: "places at their usual level", tone: "ok" }),
+          ring({ value: elevated, max: total || 1, label: "places higher than usual", tone: "watch" }),
+          checked);
+      }
       gauges.replaceChildren(
-        ring({ value: p.live_sources ?? total, max: total || 1, label: "sources read live", tone: "water" }),
-        ring({ value: w.counts?.elevated ?? 0, max: total || 1, label: "places above their usual level", tone: "watch" }),
-        ring({ value: Number.isFinite(since) ? Math.min(15, since) : 0, max: 15, text: ago(w.last_cycle?.finished_at).replace(" ago", "") || "–", label: "since the last check, every 15 min", tone: "water" }));
+        ring({ value: p.live_sources ?? total, max: total || 1, label: "sources read live" }),
+        ring({ value: elevated, max: total || 1, label: "places above their usual level", tone: "watch" }),
+        checked);
     })
     .catch(() => gauges.replaceChildren(h("p", { class: "muted", text: "Live numbers are unavailable right now." })));
 

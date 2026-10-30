@@ -19,6 +19,10 @@ const go = (hash) => {
 function roles() {
   document.getElementById("roles").replaceChildren(...Object.entries(ROLES).map(([id, r]) =>
     h("button", { type: "button", "aria-pressed": String(id === role()), onclick: () => { setRole(id); roles(); render(); } }, r.label)));
+  // The menu follows the role: its own name for Watch, and Decide only for those who decide.
+  const r = ROLES[role()];
+  document.querySelector('.nav a[href="#/watch"]').textContent = r.watchNav;
+  document.querySelector('.nav a[href="#/decide"]').hidden = !r.decide;
 }
 
 function render() {

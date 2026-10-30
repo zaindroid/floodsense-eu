@@ -77,6 +77,7 @@ h2 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.01em; margin: 0 0 1
 .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .section-head a { font-size: .9rem; text-decoration: none; }
 .muted { color: var(--soft); }
+.faint { color: var(--faint); }
 .small { font-size: .88rem; }
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; backdrop-filter: blur(8px); box-shadow: var(--hi); }
@@ -143,6 +144,8 @@ h2 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.01em; margin: 0 0 1
 .ring .track { stroke: var(--line); }
 .ring .value { stroke: var(--water); transition: stroke-dasharray .9s cubic-bezier(.4, 0, .2, 1); }
 .ring.watch .value { stroke: var(--watch); }
+.ring.ok .value { stroke: var(--ok); }
+.ring.high .value { stroke: var(--high); }
 .ring-num { position: absolute; top: 3.85rem; left: 0; right: 0; font-family: var(--display); font-size: 1.55rem; font-weight: 600;
             letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1; }
 .ring figcaption { color: var(--soft); font-size: .86rem; line-height: 1.35; max-width: 11rem; }
@@ -284,6 +287,40 @@ main.docked-open { padding-bottom: min(64vh, 36rem); }
 .feed-item { display: grid; grid-template-columns: auto 1fr; gap: .8rem; align-items: start; padding: .8rem 0; border-bottom: 1px solid var(--line); }
 .feed-item:last-child { border-bottom: 0; }
 .feed-item time { color: var(--faint); font-size: .82rem; font-variant-numeric: tabular-nums; white-space: nowrap; padding-top: .1rem; }
+
+/* citizen: find your place */
+.search { width: 100%; max-width: 30rem; background: var(--well); border: 1px solid var(--line-2); border-radius: 10px; padding: .75rem 1rem; font-size: 1rem; }
+.search:focus { outline: none; border-color: var(--water); box-shadow: 0 0 0 3px color-mix(in srgb, var(--water) 18%, transparent); }
+.advice { padding: 1rem 1.2rem; border: 1px solid var(--line-2); border-left: 3px solid var(--water); border-radius: 12px; background: var(--card); }
+.advice p { margin: .25rem 0 0; color: var(--soft); font-size: .93rem; }
+.plain-row { grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) 6.5rem; }
+.plain-row .val { font-weight: 400; }
+.plain-row .plain { display: block; font-weight: 500; }
+.plain-row .val small { display: block; margin-top: .35rem; color: var(--faint); font-size: .8rem; }
+@media (max-width: 44rem) { .plain-row { grid-template-columns: 1fr auto; } }
+
+/* insurer: the portfolio */
+.pf-head { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: center; justify-content: space-between; }
+.pf-big { margin: 0; font-size: 1.15rem; max-width: 34rem; }
+.pf-big b { font-family: var(--display); font-size: 2.1rem; font-weight: 600; letter-spacing: -.02em; margin-right: .35rem; }
+.pf-rows { display: grid; gap: .1rem; margin-top: 1.2rem; }
+.pf-row { display: grid; grid-template-columns: 7rem minmax(0, 1fr) 6.5rem 10rem; gap: 1rem; align-items: center; padding: .55rem 0; border-top: 1px solid var(--line);
+          font-size: .9rem; font-variant-numeric: tabular-nums; }
+.pf-row > span:nth-child(3), .pf-row > span:nth-child(4) { color: var(--soft); text-align: right; }
+.pf-row.total { font-weight: 600; }
+.share { display: block; height: 8px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.share span { display: block; height: 100%; background: var(--high); }
+@media (max-width: 40rem) { .pf-row { grid-template-columns: 5.5rem minmax(0, 1fr) auto; } .pf-row > span:nth-child(4) { display: none; } }
+
+/* civil protection: act first */
+.act-first { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .8rem; }
+.pcard { display: grid; gap: .2rem; padding: 1rem 1.1rem; border: 1px solid var(--line); border-top: 3px solid var(--faint); border-radius: 12px; background: var(--card); }
+.pcard.watch { border-top-color: var(--watch); }
+.pcard.high { border-top-color: var(--high); }
+.pcard-top { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; }
+.pcard-val { margin-top: .4rem; font-family: var(--display); font-size: 1.3rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pcard-val small { font-family: "Inter", system-ui, sans-serif; font-size: .82rem; font-weight: 400; color: var(--soft); }
+.pcard .meter { max-width: none; margin-bottom: .4rem; }
 
 /* ---------- ask ---------- */
 .ask-box { display: grid; gap: 1rem; }
