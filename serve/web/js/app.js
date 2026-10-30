@@ -53,7 +53,10 @@ function theme(next) {
   themeButton.setAttribute("aria-label", dark ? "Switch to the light theme" : "Switch to the dark theme");
   themeButton.title = themeButton.getAttribute("aria-label");
 }
-themeButton.addEventListener("click", () => theme(document.documentElement.dataset.theme === "light" ? "dark" : "light"));
+themeButton.addEventListener("click", () => {
+  theme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
+  render(); // maps pick their basemap for the theme when drawn
+});
 theme();
 
 window.addEventListener("hashchange", () => { render(); main.focus({ preventScroll: true }); });

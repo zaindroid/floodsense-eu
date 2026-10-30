@@ -1,5 +1,6 @@
 import { get, post, rememberRun, streamRun } from "../api.js";
 import { ROLES, WHEN, role } from "../roles.js";
+import { askCitizen } from "./ask-citizen.js";
 import { createFlow } from "../flow.js";
 import { fill, h, loading, num, pill } from "../ui.js";
 
@@ -38,11 +39,13 @@ export const plainText = (t) => String(t || "").replace(/\s*\[C\d+(?:,\s*C\d+)*\
   .replace(/(\d+\.\d)\d{5,}/g, "$1"); // float noise such as 88.2000000000001
 const WEB_NOTE = /^Web context, not an official warning\.\s*/;
 
-export function ask(root) {
+export function ask(root, go, preset) {
   const r = ROLES[role()];
+  if (!r.decide) return askCitizen(root, preset);
   let when = "now";
   let place = "";
   const text = h("textarea", { "aria-label": "Your question", placeholder: r.questions[0].q, maxlength: 500 });
+  if (preset) text.value = preset;
   const whenChips = h("div", { class: "chips", role: "group", "aria-label": "Data from" });
   const drawWhen = () => whenChips.replaceChildren(...Object.entries(WHEN).map(([k, w]) =>
     h("button", { class: "chip", type: "button", "aria-pressed": String(k === when), onclick: () => { when = k; drawWhen(); } }, w.label)));

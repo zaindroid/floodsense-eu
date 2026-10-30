@@ -79,17 +79,6 @@ export function fill(el, ...children) {
   el.replaceChildren(...children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false));
 }
 
-// A 270-degree ring gauge: value out of max, the number in the middle.
-export function ring({ value, max, text, label, tone = "water" }) {
-  const R = 42, C = 2 * Math.PI * R, ARC = 0.75;
-  const k = max > 0 && typeof value === "number" ? Math.max(0, Math.min(1, value / max)) : 0;
-  const arc = (cls, len) => s("circle", { cx: 50, cy: 50, r: R, class: cls, "stroke-dasharray": `${len} ${C}`, transform: "rotate(135 50 50)" });
-  return h("figure", { class: `ring ${tone}` },
-    s("svg", { viewBox: "0 0 100 100", "aria-hidden": "true" }, arc("track", C * ARC), arc("value", Math.max(0.001, C * ARC * k))),
-    h("b", { class: "ring-num", text: text ?? num(value) }),
-    h("figcaption", { text: label }));
-}
-
 // A level against its usual mark: 0 to twice usual, the usual line at the middle.
 export function meter(ratio, tone, title) {
   const k = typeof ratio === "number" && Number.isFinite(ratio) ? Math.max(0.02, Math.min(1, ratio / 2)) : 0;
