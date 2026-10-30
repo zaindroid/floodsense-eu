@@ -67,11 +67,11 @@ def index() -> FileResponse:
 
 
 class Web(StaticFiles):
-    """The UI's files are not fingerprinted, so the browser revalidates each one."""
+    """The UI's files are not fingerprinted. no-cache would be raised to hours by the CDN, so no-store."""
 
     async def get_response(self, path, scope):
         response = await super().get_response(path, scope)
-        response.headers["cache-control"] = "no-cache"
+        response.headers["cache-control"] = "no-store"
         return response
 
 
